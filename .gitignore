@@ -1,6 +1,7 @@
 # ── Sensitive / local files ──
 config.json
 bridge.db
+log.txt
 
 # ── Reverse-engineered API docs (not part of the bridge) ──
 flru_api.md

@@ -9,15 +9,19 @@
 для добавления в config.json.
 """
 
+import asyncio
 import json
 import os
 import sys
-from b24pysdk import BitrixWebhook, Client
+
+import aiohttp
+import aiohttp.resolver
+
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 
 
-def main():
+async def register_bot():
     if not os.path.exists(CONFIG_PATH):
         print("ОШИБКА: config.json не найден. Скопируйте config.example.json → config.json и заполните учётные данные Bitrix24.")
         sys.exit(1)
@@ -34,24 +38,34 @@ def main():
         print("ОШИБКА: поля b24.domain и b24.webhook_secret должны быть заполнены в config.json")
         sys.exit(1)
 
-    token = BitrixWebhook(domain=domain, webhook_token=f"{user_id}/{secret}")
-    client = Client(token)
+    resolver = aiohttp.resolver.ThreadedResolver()
+    connector = aiohttp.TCPConnector(resolver=resolver)
 
     bot_code = "fl_ru_bridge"
     bot_token = "flru_bridge_token_" + os.urandom(4).hex()
+    bot_name = "FL.ru Bridge"
 
-    result = client.call("imbot.v2.Bot.register", {
+    body = {
         "fields": {
             "code": bot_code,
             "botToken": bot_token,
             "type": "personal",
             "isHidden": True,
             "properties": {
-                "name": "FL.ru Bridge",
+                "name": bot_name,
                 "workPosition": "Пересылка сообщений с fl.ru",
             },
         }
-    }).result
+    }
+
+    url = f"https://{domain}/rest/{user_id}/{secret}/imbot.v2.Bot.register.json"
+    data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+
+    async with aiohttp.ClientSession(connector=connector) as session:
+        async with session.post(url, data=data, headers={
+            "Content-Type": "application/json; charset=utf-8",
+        }) as resp:
+            result = await resp.json()
 
     if "error" in result:
         print(f"ОШИБКА: {result.get('error_description', result['error'])}")
@@ -69,4 +83,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(register_bot())

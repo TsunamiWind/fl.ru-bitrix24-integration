@@ -467,12 +467,14 @@ class Bridge:
         if not new_from_you:
             return
 
+        new_from_you.sort(key=lambda m: m["id"])
+
         top_files = msgs.get("files", []) if isinstance(msgs.get("files"), list) else []
 
         flru_type = dialog["flru_type"]
         flru_dialog_id = dialog["flru_dialog_id"]
 
-        for msg in reversed(new_from_you):
+        for msg in new_from_you:
             text = clean_operator_text(msg.get("text", ""))
             b24_files = msg.get("files", []) if isinstance(msg.get("files"), list) else []
             if top_files:

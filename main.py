@@ -1,18 +1,51 @@
 import asyncio
 import json
 import logging
+import logging.handlers
 import os
 import sys
+import traceback
 
 from bridge import Bridge
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
-log = logging.getLogger("main")
+LOG_PATH = os.path.join(os.path.dirname(__file__), "log.txt")
 
+
+def setup_logging():
+    fmt = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    console = logging.StreamHandler(sys.stdout)
+    console.setLevel(logging.INFO)
+    console.setFormatter(fmt)
+
+    file_handler = logging.handlers.RotatingFileHandler(
+        LOG_PATH, maxBytes=10 * 1024 * 1024, backupCount=3, encoding="utf-8",
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(fmt)
+
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    root.addHandler(console)
+    root.addHandler(file_handler)
+
+
+def handle_exception(exc_type, exc_value, exc_tb):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_tb)
+        return
+    logging.getLogger("main").critical(
+        "Необработанное исключение:\n%s",
+        "".join(traceback.format_exception(exc_type, exc_value, exc_tb)),
+    )
+
+
+sys.excepthook = handle_exception
+
+log = logging.getLogger("main")
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 
 
@@ -48,6 +81,8 @@ def check_config(config: dict) -> list[str]:
 
 
 async def main():
+    setup_logging()
+
     if not os.path.exists(CONFIG_PATH):
         log.error("config.json не найден. Скопируйте config.example.json → config.json и заполните учётные данные.")
         sys.exit(1)
@@ -67,6 +102,7 @@ async def main():
     log.info(f"  ID бота:   {config['b24']['bot_id']}")
     log.info(f"  Интервал опроса fl.ru: {config['flru'].get('poll_interval_seconds', 30)}с")
     log.info(f"  Интервал опроса B24:   5с")
+    log.info(f"  Лог-файл: {LOG_PATH}")
     log.info("")
 
     bridge = Bridge(config)
@@ -74,6 +110,8 @@ async def main():
         await bridge.start()
     except KeyboardInterrupt:
         log.info("Завершение работы...")
+    except Exception:
+        log.critical("Критическая ошибка моста:\n%s", traceback.format_exc())
     finally:
         await bridge.stop()
 

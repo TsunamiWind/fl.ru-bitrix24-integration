@@ -1,0 +1,13 @@
+services:
+  bridge:
+    build: .
+    container_name: flru-b24-bridge
+    restart: unless-stopped
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - bridge_data:/data
+    environment:
+      - BRIDGE_DB_PATH=/data/bridge.db
+
+volumes:
+  bridge_data:

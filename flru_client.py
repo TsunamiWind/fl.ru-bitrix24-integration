@@ -1,7 +1,9 @@
 import aiohttp
 import json
+import logging
 import re
 
+log = logging.getLogger("flru")
 FLRU_BASE = "https://www.fl.ru"
 
 
@@ -44,22 +46,30 @@ class FlRuClient:
     async def _get(self, path: str):
         await self._ensure_session()
         url = f"{FLRU_BASE}{path}" if path.startswith("/") else path
+        log.debug("GET %s", url)
         async with self._session.get(url, headers=self._headers) as resp:
             if resp.status == 403:
+                log.error("GET %s → 403 (PHPSESSID истёк)", url)
                 raise Exception("PHPSESSID истёк — обновите куки в config.json")
-            return await resp.json()
+            body = await resp.json()
+            log.debug("GET %s → %s", url, _truncate(json.dumps(body, ensure_ascii=False)))
+            return body
 
     async def _post_form(self, path: str, data: dict):
         await self._ensure_session()
         url = f"{FLRU_BASE}{path}" if path.startswith("/") else path
+        log.debug("POST %s data=%s", url, _truncate(str(data)))
         headers = {
             **self._headers,
             "Content-Type": "application/x-www-form-urlencoded",
         }
         async with self._session.post(url, data=data, headers=headers) as resp:
             if resp.status == 403:
+                log.error("POST %s → 403 (PHPSESSID истёк)", url)
                 raise Exception("PHPSESSID истёк — обновите куки в config.json")
-            return await resp.json()
+            body = await resp.json()
+            log.debug("POST %s → %s", url, _truncate(json.dumps(body, ensure_ascii=False)))
+            return body
 
     async def get_unread_counts(self) -> dict:
         return await self._get("/user/cnt-new/chat/")
@@ -220,6 +230,12 @@ class FlRuClient:
         url = f"{FLRU_BASE}/storage/upload/"
         async with self._session.post(url, data=data, headers=headers) as resp:
             return await resp.json()
+
+
+def _truncate(s: str, max_len: int = 300) -> str:
+    if len(s) <= max_len:
+        return s
+    return s[:max_len] + "…"
 
     async def upload_file_legacy(self, file_data: bytes, file_name: str,
                                   mime_type: str = "application/octet-stream") -> str:

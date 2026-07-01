@@ -1,7 +1,7 @@
 import aiosqlite
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "bridge.db")
+DB_PATH = os.environ.get("BRIDGE_DB_PATH", os.path.join(os.path.dirname(__file__), "bridge.db"))
 
 
 async def init_db():

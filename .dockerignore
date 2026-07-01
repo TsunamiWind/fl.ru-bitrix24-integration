@@ -1,0 +1,15 @@
+config.json
+bridge.db
+flru_api.md
+b24restdocs/
+bitrix24-dev-hub/
+b24.ps1
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+.venv/
+venv/
+.env
+.git/
+.gitignore
