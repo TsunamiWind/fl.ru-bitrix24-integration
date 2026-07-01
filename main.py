@@ -12,6 +12,10 @@ LOG_PATH = os.path.join(os.path.dirname(__file__), "log.txt")
 
 
 def setup_logging():
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(logging.DEBUG)
+
     fmt = logging.Formatter(
         "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
@@ -20,16 +24,13 @@ def setup_logging():
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(logging.INFO)
     console.setFormatter(fmt)
+    root.addHandler(console)
 
     file_handler = logging.handlers.RotatingFileHandler(
         LOG_PATH, maxBytes=10 * 1024 * 1024, backupCount=3, encoding="utf-8",
     )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(fmt)
-
-    root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
-    root.addHandler(console)
     root.addHandler(file_handler)
 
 

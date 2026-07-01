@@ -7,6 +7,10 @@ log = logging.getLogger("flru")
 FLRU_BASE = "https://www.fl.ru"
 
 
+class FlRuAuthError(Exception):
+    pass
+
+
 def clean_operator_text(text: str) -> str:
     text = re.sub(r"\[b\][^\[\]]*:\[/b\]\s*", "", text)
     text = text.replace("[br]", "\n")
@@ -49,8 +53,8 @@ class FlRuClient:
         log.debug("GET %s", url)
         async with self._session.get(url, headers=self._headers) as resp:
             if resp.status == 403:
-                log.error("GET %s → 403 (PHPSESSID истёк)", url)
-                raise Exception("PHPSESSID истёк — обновите куки в config.json")
+                log.error("GET %s → 403 (сессия истекла)", url)
+                raise FlRuAuthError("Сессия FL.ru истекла — обновите куки в config.json")
             body = await resp.json()
             log.debug("GET %s → %s", url, _truncate(json.dumps(body, ensure_ascii=False)))
             return body

@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime
 
 from db import (
     init_db,
@@ -14,13 +13,8 @@ from db import (
     update_last_b24_message,
 )
 from b24_client import B24Client
-from flru_client import FlRuClient, clean_operator_text
+from flru_client import FlRuClient, clean_operator_text, FlRuAuthError
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
 log = logging.getLogger("bridge")
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
@@ -60,6 +54,12 @@ class Bridge:
 
     async def start(self):
         await init_db()
+        if self.config["flru"]["cookies"].get("PHPSESSID"):
+            try:
+                await self.flru.get_unread_counts()
+            except FlRuAuthError as e:
+                log.critical("Не удалось запустить мост: %s", e)
+                return
         self._running = True
         log.info("Мост запущен")
         await asyncio.gather(
@@ -81,6 +81,10 @@ class Bridge:
         while self._running:
             try:
                 await self._check_flru_messages()
+            except FlRuAuthError as e:
+                log.critical("Остановка моста: %s", e)
+                self._running = False
+                return
             except Exception as e:
                 log.error(f"Ошибка опроса fl.ru: {e}")
             await asyncio.sleep(self.flru_poll_interval)
