@@ -409,6 +409,13 @@ class Bridge:
                 entity_id=entity_id,
             )
             await asyncio.sleep(1)
+            try:
+                msgs = await self.b24.get_messages(f"chat{b24_chat_id}", limit=1)
+                latest = msgs.get("messages", [])
+                if latest:
+                    await update_last_b24_message(b24_chat_id, latest[0]["id"])
+            except Exception:
+                pass
 
         await upsert_dialog(
             flru_type=flru_type,
@@ -462,6 +469,12 @@ class Bridge:
 
         messages = msgs.get("messages", [])
         if not messages:
+            return
+
+        if not last_known_id:
+            latest_id = max(m["id"] for m in messages)
+            await update_last_b24_message(b24_chat_id, latest_id)
+            log.debug(f"База ответов чата {b24_chat_id}: last_msg_id={latest_id}")
             return
 
         new_from_you = [
