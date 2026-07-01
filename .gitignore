@@ -1,0 +1,22 @@
+# ── Sensitive / local files ──
+config.json
+bridge.db
+
+# ── Reverse-engineered API docs (not part of the bridge) ──
+flru_api.md
+
+# ── Cloned API docs (not part of the bridge) ──
+b24restdocs/
+bitrix24-dev-hub/
+
+# ── Temp / utility ──
+b24.ps1
+__pycache__/
+*.pyc
+
+# ── Python ──
+*.egg-info/
+dist/
+.venv/
+venv/
+.env

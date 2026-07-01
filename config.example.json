@@ -1,0 +1,25 @@
+{
+    "b24": {
+        "domain": "your-company.bitrix24.ru",
+        "webhook_user_id": 1,
+        "webhook_secret": "ваш-webhook-код",
+        "bot_id": 0,
+        "bot_token": "ваш-токен-бота",
+        "your_user_id": 1
+    },
+    "flru": {
+        "cookies": {
+            "PHPSESSID": "скопируйте-из-браузера",
+            "id": "ваш-id-на-flru",
+            "pwd": "ваш-password-hash",
+            "XSRF-TOKEN": "скопируйте-из-браузера",
+            "name": "ваш-username",
+            "cookies_accepted": "1",
+            "user_device_id": "скопируйте-из-браузера"
+        },
+        "csrf_token": "равен-XSRF-TOKEN",
+        "your_user_id": 0,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+        "poll_interval_seconds": 30
+    }
+}
