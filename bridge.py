@@ -13,7 +13,7 @@ from db import (
     update_last_b24_message,
 )
 from b24_client import B24Client
-from flru_client import FlRuClient, clean_operator_text, FlRuAuthError
+from flru_client import FlRuClient, clean_operator_text, FlRuAuthError, FlRuSendError
 
 log = logging.getLogger("bridge")
 
@@ -499,7 +499,16 @@ class Bridge:
                 top_files = []
 
             log.info(f"  B24 → fl.ru [{flru_type} {flru_dialog_id}]: текст={text[:80]} файлов={len(b24_files)}")
-            await self._send_reply_to_flru(dialog, text, b24_files, msg["id"])
+            try:
+                await self._send_reply_to_flru(dialog, text, b24_files, msg["id"])
+            except FlRuAuthError:
+                raise
+            except Exception as e:
+                log.error(
+                    f"  Не удалось доставить сообщение на fl.ru (msg #{msg['id']}): {e}. "
+                    f"Повтор при следующем опросе."
+                )
+                return
             await update_last_b24_message(b24_chat_id, msg["id"])
             await asyncio.sleep(1)
 
