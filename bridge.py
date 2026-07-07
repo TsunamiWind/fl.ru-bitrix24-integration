@@ -522,9 +522,9 @@ class Bridge:
             return
 
         file_urls = []
+        file_failures = 0
         for f in b24_files:
             file_name = f.get("name", "файл")
-            file_url = f.get("urlDownload", "")
             try:
                 file_content = await self.b24.download_file_v2(
                     f.get("id", 0), f.get("chatId", 0))
@@ -535,7 +535,13 @@ class Bridge:
                 log.info(f"    загружен {file_name} → {cdn_url}")
                 await asyncio.sleep(1)
             except Exception as e:
+                file_failures += 1
                 log.error(f"    не удалось загрузить {file_name} на fl.ru: {e}")
+
+        if file_failures and not file_urls and not text.strip():
+            raise FlRuSendError(
+                f"все вложения ({file_failures}) не загрузились — сообщение не отправлено"
+            )
 
         if file_urls:
             link_text = "\n".join(file_urls)
@@ -544,17 +550,20 @@ class Bridge:
             else:
                 text = link_text
 
+        sent = False
         if text.strip():
             if flru_type == DT_OFFER and project_id and len(text) > 1000:
                 log.warning(f"Обрезаем сообщение отклика с {len(text)} до 1000 символов (ограничение fl.ru)")
                 text = text[:997] + "..."
             await self._send_text_to_flru(flru_type, flru_dialog_id, project_id,
                                            other_user_id, text)
+            sent = True
 
-        b24_chat_id = dialog["b24_chat_id"]
-        dialog_id = f"chat{b24_chat_id}"
-        await self.b24.mark_message_read(dialog_id, b24_msg_id)
-        log.debug(f"    доставлено на fl.ru: {dialog_id} msg #{b24_msg_id}")
+        if sent:
+            b24_chat_id = dialog["b24_chat_id"]
+            dialog_id = f"chat{b24_chat_id}"
+            await self.b24.mark_message_read(dialog_id, b24_msg_id)
+            log.debug(f"    доставлено на fl.ru: {dialog_id} msg #{b24_msg_id}")
 
     async def _send_text_to_flru(self, flru_type: str, flru_dialog_id: str,
                                    project_id: str, other_user_id: int, text: str):
