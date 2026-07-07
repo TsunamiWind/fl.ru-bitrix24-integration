@@ -581,22 +581,6 @@ class Bridge:
         elif flru_type == DT_SYSTEM and other_user_id:
             await self.flru.send_dialogue_message(int(other_user_id), text)
 
-    async def _send_to_flru(self, flru_type: str, flru_dialog_id: str,
-                             project_id: str, other_user_id: int, text: str):
-        if flru_type == DT_OFFER and project_id:
-            if len(text) > 1000:
-                log.warning(f"Обрезаем сообщение отклика с {len(text)} до 1000 символов (ограничение fl.ru)")
-                text = text[:997] + "..."
-            await self.flru.send_offer_message(
-                int(project_id), int(flru_dialog_id), text
-            )
-        elif flru_type == DT_ORDER:
-            await self.flru.send_order_message(int(flru_dialog_id), text)
-        elif flru_type == DT_TSERVICE:
-            await self.flru.send_tservice_message(int(flru_dialog_id), text)
-        elif flru_type == DT_SYSTEM and other_user_id:
-            await self.flru.send_dialogue_message(int(other_user_id), text)
-
 
 async def main():
     if not os.path.exists(CONFIG_PATH):
